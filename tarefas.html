@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Tarefas </title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .more{border:0;background:transparent;cursor:pointer}
+      .profile-menu{position:absolute;right:0;bottom:48px;padding:5px;border:1px solid var(--line);border-radius:8px;background:#fff;box-shadow:0 8px 20px #2630441c;z-index:3}
+      .profile-menu button{padding:8px 22px;border:0;border-radius:5px;color:#c04e5b;background:#fff;cursor:pointer;font-size:11px;font-weight:700}
+      .profile-menu button:hover{background:#fff0f1}
+    </style>
+  </head>
+  <body>
+<div class="app-shell" id="app-screen">
+      <aside class="sidebar">
+        <a class="brand" href="#" aria-label="Página inicial">
+          <span class="brand-mark">✓</span>
+          <span>Tarefas</span>
+        </a>
+
+        <nav class="main-nav" aria-label="Navegação principal">
+          <a class="nav-item active" href="#"><span class="nav-icon">▦</span>Minhas tarefas</a>
+          <a class="nav-item" href="#"><span class="nav-icon">◷</span>Hoje <span class="nav-count">4</span></a>
+        </nav>
+
+        <div class="sidebar-section">
+          <p class="sidebar-label">Etiquetas</p>
+          <a class="tag-link" href="#"><i class="tag-dot blue"></i>Trabalho</a>
+          <a class="tag-link" href="#"><i class="tag-dot purple"></i>Pessoal</a>
+          <a class="tag-link" href="#"><i class="tag-dot orange"></i>Projetos</a>
+        </div>
+
+        <div class="sidebar-bottom">
+          <div class="profile">
+            <div class="avatar" id="user-avatar">US</div>
+            <div><strong id="user-name">Usuário</strong><small>Administrador</small></div>
+            <button class="more" id="profile-menu-button" aria-label="Abrir menu do usuário" aria-expanded="false">•••</button>
+            <div class="profile-menu" id="profile-menu" hidden>
+              <button id="logout-button">Sair</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="current-date-label"></p>
+            <h1>Minhas tarefas</h1>
+          </div>
+          <div class="top-actions">
+            <button class="add-task-button" id="open-create">＋ Nova tarefa</button>
+          </div>
+        </header>
+
+        <section class="toolbar" aria-label="Controles da agenda">
+          <div class="view-switcher">
+            <button class="switch active" data-view="month">Mês</button>
+            <button class="switch" data-view="week">Semana</button>
+            <button class="switch" data-view="list">Lista</button>
+          </div>
+          <div class="month-controls">
+            <button class="circle-button" aria-label="Mês anterior">‹</button>
+            <strong id="current-month-label"></strong>
+            <button class="circle-button" aria-label="Próximo mês">›</button>
+            <button class="today-button">Hoje</button>
+          </div>
+        </section>
+
+        <div class="workspace">
+          <section class="calendar-card" id="calendar-card">
+            <div class="calendar-weekdays">
+              <span>DOM</span><span>SEG</span><span>TER</span><span>QUA</span><span>QUI</span><span>SEX</span><span>SÁB</span>
+            </div>
+            <div class="calendar-grid" id="calendar-grid"></div>
+          </section>
+
+          <aside class="tasks-panel">
+            <div class="panel-heading">
+              <div><h2>Próximas tarefas</h2><p id="task-total">0 tarefas agendadas</p></div>
+              <button class="plain-button" id="filter-button">Filtrar <span>⌄</span></button>
+            </div>
+            <div class="task-list" id="task-list"></div>
+            <button class="see-all" id="see-all">Ver todas as tarefas <span>→</span></button>
+          </aside>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="task-modal" hidden>
+      <section class="task-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-header">
+          <div><p class="eyebrow">NOVA TAREFA</p><h2 id="modal-title">Criar tarefa</h2></div>
+          <button class="close-modal" id="close-modal" aria-label="Fechar">×</button>
+        </div>
+        <form id="task-form">
+          <input type="hidden" id="editing-id" name="editing-id" />
+          <label for="task-name">Nome da tarefa</label>
+          <input id="task-name" name="name" type="text" placeholder="Ex: Revisar apresentação" required />
+          <div class="form-row">
+            <div><label for="task-type">Tipo de tarefa</label><select id="task-type" name="type"><option>Trabalho</option><option>Pessoal</option><option>Projetos</option><option>Reunião</option></select></div>
+            <div><label for="task-priority">Prioridade</label><select id="task-priority" name="priority"><option value="Alta">Alta</option><option value="Média" selected>Média</option><option value="Baixa">Baixa</option></select></div>
+          </div>
+          <div class="form-row">
+            <div><label for="start-date">Data de início</label><input id="start-date" name="start" type="date" required /></div>
+            <div><label for="end-date">Data de término</label><input id="end-date" name="end" type="date" required /></div>
+          </div>
+          <p class="form-error" id="form-error" role="alert"></p>
+          <div class="modal-actions"><button type="button" class="delete-button" id="delete-task" hidden>Excluir</button><button type="button" class="cancel-button" id="cancel-modal">Cancelar</button><button type="submit" class="save-button">Salvar tarefa</button></div>
+        </form>
+      </section>
+    </div>
+    <script>
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const currentMonth = today.getMonth();
+      let tasks = [];
+      const grid = document.querySelector("#calendar-grid");
+      const list = document.querySelector("#task-list");
+      const modal = document.querySelector("#task-modal");
+      const form = document.querySelector("#task-form");
+      const loggedUsername = sessionStorage.getItem("tasklyUsername");
+      const userName = loggedUsername || "Usuário";
+      const userInitials = userName.slice(0, 2).toUpperCase();
+      document.querySelector("#user-name").textContent = userName;
+      document.querySelector("#user-avatar").textContent = userInitials;
+      const calendarCard = document.querySelector("#calendar-card");
+      const workspace = document.querySelector(".workspace");
+      const weekdays = document.querySelector(".calendar-weekdays");
+      const viewButtons = document.querySelectorAll("[data-view]");
+      let activeView = "month";
+      const dateLabel = (date) => new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(`${date}T12:00:00`)).replace(".", "");
+      const escapeHtml = (value) => value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
+      const currentMonthLabel = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(today);
+      document.querySelector("#current-date-label").textContent = `${new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(today).toUpperCase()}, ${new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }).format(today)}`;
+      document.querySelector("#current-month-label").textContent = currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1);
+      document.querySelector("#calendar-card").setAttribute("aria-label", `Calendário de ${currentMonthLabel}`);
+
+      function renderCalendar() {
+        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const days = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const previousDays = new Date(currentYear, currentMonth, 0).getDate();
+        let html = "";
+        for (let i = firstDay - 1; i >= 0; i--) html += `<div class="calendar-day muted-day"><span>${previousDays - i}</span></div>`;
+        for (let day = 1; day <= days; day++) {
+          const date = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const dayTasks = tasks.filter((task) => task.start === date || task.end === date);
+          html += `<div class="calendar-day ${day === today.getDate() ? "today" : ""}"><span class="day-number">${day}</span>${dayTasks.slice(0, 2).map((task) => `<button class="calendar-task ${task.color}" data-edit="${task.id}">${escapeHtml(task.name)}</button>`).join("")}${dayTasks.length > 2 ? `<small>+${dayTasks.length - 2} mais</small>` : ""}</div>`;
+        }
+        for (let day = 1; (firstDay + days + day - 1) % 7 !== 0; day++) html += `<div class="calendar-day muted-day"><span>${day}</span></div>`;
+        renderGrid(html);
+      }
+
+      function renderWeek() {
+        const weekStart = new Date(currentYear, currentMonth, today.getDate() - today.getDay());
+        let html = "";
+        weekdays.innerHTML = "";
+        for (let offset = 0; offset < 7; offset++) {
+          const dateObject = new Date(weekStart);
+          dateObject.setDate(weekStart.getDate() + offset);
+          const date = `${dateObject.getFullYear()}-${String(dateObject.getMonth() + 1).padStart(2, "0")}-${String(dateObject.getDate()).padStart(2, "0")}`;
+          const dayTasks = tasks.filter((task) => task.start === date || task.end === date);
+          weekdays.innerHTML += `<span>${new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(dateObject).replace(".", "").toUpperCase()}</span>`;
+          html += `<div class="calendar-day ${date === localDate(today) ? "today" : ""}"><span class="day-number">${dateObject.getDate()}</span>${dayTasks.map((task) => `<button class="calendar-task ${task.color}" data-edit="${task.id}">${escapeHtml(task.name)}</button>`).join("")}</div>`;
+        }
+        renderGrid(html);
+      }
+
+      function renderListView() {
+        weekdays.innerHTML = "";
+        const sortedTasks = tasks.slice().sort((a, b) => a.start.localeCompare(b.start));
+        grid.className = "calendar-grid list-calendar";
+        grid.innerHTML = sortedTasks.length ? sortedTasks.map((task) => `<div class="calendar-day"><span class="day-number">${dateLabel(task.start)}${task.end !== task.start ? ` – ${dateLabel(task.end)}` : ""}</span><button class="calendar-task ${task.color}" data-edit="${task.id}">${escapeHtml(task.name)}</button><span class="list-task-type">${escapeHtml(task.type)} · ${escapeHtml(task.priority)}</span></div>`).join("") : `<div class="empty-state">Nenhuma tarefa cadastrada.</div>`;
+        grid.querySelectorAll("[data-edit]").forEach((button) => button.addEventListener("click", () => openModal(Number(button.dataset.edit))));
+      }
+
+      function localDate(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      }
+
+      function renderGrid(html) {
+        grid.className = "calendar-grid";
+        grid.innerHTML = html;
+        grid.querySelectorAll("[data-edit]").forEach((button) => button.addEventListener("click", () => openModal(Number(button.dataset.edit))));
+      }
+
+      function renderActiveView() {
+        workspace.classList.toggle("list-mode", activeView === "list");
+        weekdays.hidden = activeView === "list";
+        if (activeView === "month") renderCalendar();
+        if (activeView === "week") renderWeek();
+        if (activeView === "list") renderListView();
+      }
+
+      function renderList() {
+        const visibleTasks = document.querySelector(".tasks-panel").classList.contains("expanded") ? tasks : tasks.slice(0, 5);
+        list.innerHTML = visibleTasks.slice().sort((a, b) => a.start.localeCompare(b.start)).map((task) => `<article class="task-item"><div class="task-color ${task.color}"></div><div class="task-info"><strong>${escapeHtml(task.name)}</strong><p>${dateLabel(task.start)}${task.end !== task.start ? ` – ${dateLabel(task.end)}` : ""} <span>•</span> ${task.time}</p><span class="task-type">${escapeHtml(task.type)}</span></div><button class="item-menu" data-menu="${task.id}" aria-label="Editar tarefa">•••</button></article>`).join("");
+        document.querySelector("#task-total").textContent = `${tasks.length} tarefas agendadas`;
+        list.querySelectorAll("[data-menu]").forEach((button) => button.addEventListener("click", () => openModal(Number(button.dataset.menu))));
+      }
+
+      function openModal(id) {
+        const task = tasks.find((item) => item.id === id);
+        form.reset();
+        document.querySelector("#editing-id").value = task ? task.id : "";
+        document.querySelector("#modal-title").textContent = task ? "Editar tarefa" : "Criar tarefa";
+        document.querySelector(".modal-header .eyebrow").textContent = task ? "EDITAR TAREFA" : "NOVA TAREFA";
+        document.querySelector("#delete-task").hidden = !task;
+        if (task) { document.querySelector("#task-name").value = task.name; document.querySelector("#task-type").value = task.type; document.querySelector("#task-priority").value = task.priority; document.querySelector("#start-date").value = task.start; document.querySelector("#end-date").value = task.end; }
+        modal.hidden = false; document.querySelector("#task-name").focus();
+      }
+      function closeModal() { modal.hidden = true; document.querySelector("#form-error").textContent = ""; }
+      document.querySelector("#open-create").addEventListener("click", () => openModal());
+      document.querySelector("#close-modal").addEventListener("click", closeModal);
+      document.querySelector("#cancel-modal").addEventListener("click", closeModal);
+      document.querySelector("#delete-task").addEventListener("click", () => {
+        const id = Number(document.querySelector("#editing-id").value);
+        if (id && window.confirm("Excluir esta tarefa?")) { tasks = tasks.filter((task) => task.id !== id); renderActiveView(); renderList(); closeModal(); }
+      });
+      modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(); });
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const data = new FormData(form);
+        if (data.get("end") < data.get("start")) { document.querySelector("#form-error").textContent = "A data de término deve ser posterior à data de início."; return; }
+        const id = Number(data.get("editing-id"));
+        const task = { id: id || Date.now(), name: data.get("name"), type: data.get("type"), priority: data.get("priority"), start: data.get("start"), end: data.get("end"), time: "09:00", color: data.get("type") === "Trabalho" ? "blue" : data.get("type") === "Projetos" ? "purple" : "orange" };
+        tasks = id ? tasks.map((item) => item.id === id ? { ...item, ...task } : item) : [...tasks, task];
+        renderActiveView(); renderList(); closeModal();
+      });
+      document.querySelector("#see-all").addEventListener("click", () => { document.querySelector(".tasks-panel").classList.toggle("expanded"); renderList(); });
+      document.querySelector("#profile-menu-button").addEventListener("click", () => {
+        const menu = document.querySelector("#profile-menu");
+        menu.hidden = !menu.hidden;
+        document.querySelector("#profile-menu-button").setAttribute("aria-expanded", String(!menu.hidden));
+      });
+      document.querySelector("#logout-button").addEventListener("click", () => {
+        sessionStorage.removeItem("tasklyUsername");
+        window.location.href = "index.html";
+      });
+      viewButtons.forEach((button) => button.addEventListener("click", () => {
+        activeView = button.dataset.view;
+        viewButtons.forEach((item) => item.classList.toggle("active", item === button));
+        renderActiveView();
+      }));
+      renderActiveView(); renderList();
+    </script>
+  </body>
+</html>

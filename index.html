@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agenda de tarefas</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="login-container" id="login-screen">
+      <section class="login-box" aria-labelledby="login-title">
+        <div class="login-logo" aria-hidden="true">✓</div>
+        <p class="login-subtitle">Sistema de Tarefas Web</p>
+        <h1 id="login-title">Bem-vindo!</h1>
+        <p class="login-description">Entre para acessar suas tarefas.</p>
+        <form id="login-form">
+          <label for="username">Nome de usuário</label>
+          <input id="username" name="username" type="text" placeholder="Digite seu nome de usuário" autocomplete="username" required />
+          <label for="password">Senha</label>
+          <input id="password" name="password" type="password" placeholder="Digite sua senha" autocomplete="current-password" required />
+          <button type="submit">Entrar</button>
+          <p id="login-message" class="login-message" role="status"></p>
+        </form>
+        <a class="forgot-password" href="#" id="forgot-password">Esqueci minha senha</a>
+      </section>
+    </main>
+    <script>
+      document.querySelector("#login-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const message = document.querySelector("#login-message");
+        if (form.username.value === "admin" && form.password.value === "123456") {
+          sessionStorage.setItem("tasklyUsername", form.username.value.trim());
+          window.location.href = "tarefas.html";
+        } else {
+          message.textContent = "Nome de usuário ou senha incorretos.";
+          message.className = "login-message error";
+        }
+      });
+      document.querySelector("#forgot-password").addEventListener("click", (event) => {
+        event.preventDefault();
+        document.querySelector("#login-message").textContent = "Entre em contato com o administrador para redefinir sua senha.";
+        document.querySelector("#login-message").className = "login-message";
+      });
+    </script>
+  </body>
+</html>
